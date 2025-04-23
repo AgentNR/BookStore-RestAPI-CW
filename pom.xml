@@ -23,6 +23,28 @@
             <version>${jakartaee}</version>
             <scope>provided</scope>
         </dependency>
+        
+          <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>2.32</version>
+        </dependency>
+
+        <!-- JAX-RS Implementation (Jersey) -->
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet</artifactId>
+            <version>2.32</version>
+        </dependency>
+        
+        <!--Jackson for JSON -->
+     
+   
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-jackson</artifactId>
+            <version>2.32</version> <!-- Adjust version as needed -->
+        </dependency>
     </dependencies>
     
      <build>
