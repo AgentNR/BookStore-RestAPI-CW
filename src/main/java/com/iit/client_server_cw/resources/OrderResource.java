@@ -2,10 +2,11 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package com.example.bookstore.resources;
+package com.iit.client_server_cw.resources;
 
-import com.example.bookstore.model.Order;
-import com.example.bookstore.model.OrderItem;
+import com.iit.client_server_cw.model.Orders;
+
+
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -19,12 +20,12 @@ import java.util.concurrent.ConcurrentHashMap;
 @Consumes(MediaType.APPLICATION_JSON)
 public class OrderResource {
 
-    // map customerId → (orderId → Order)
-    private static final ConcurrentHashMap<String, ConcurrentHashMap<String, Order>> orders = new ConcurrentHashMap<>();
+    // Here customerId is the key and Order objet is the value
+    private static final ConcurrentHashMap<Integer,  Orders> orders = new ConcurrentHashMap<>();
 
     @POST
     public Response createOrder(@PathParam("customerId") String customerId,
-                                Order order) {
+                                Orders order) {
         String id = UUID.randomUUID().toString();
         order.setId(id);
         order.setCustomerId(customerId);

@@ -3,6 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.iit.client_server_cw.model;
+import com.iit.client_server_cw.model.Items;
 
 /**
  *
@@ -17,8 +18,8 @@ public class Carts {
    
     private int id;
     private int customerId;
-   private Map<Integer,Integer> items = new HashMap<>();
-
+    private List<Items> items;
+ 
     public Carts(int id, int customerId) {
         this.id = id;
         this.customerId = customerId;
@@ -40,13 +41,32 @@ public class Carts {
         this.customerId = customerId;
     }
 
-    public Map<Integer, Integer> getItems() {
+    public List<Items> getItems() {
         return items;
     }
 
-    public void setItems(Map<Integer, Integer> items) {
+    public void setItems(List<Items> items) {
         this.items = items;
     }
+    
+   public void addItem(int bookId , int quantity){
+       
+       for(Items it : items){
+           
+           if (it.getBookId() == bookId) {
+               
+               it.setBookQuantity(quantity+it.getBookQuantity());
+               return;
+               
+           }
+       }
+       items.add(new Items(bookId,quantity));
+   
+   }
+    
+    
+
+    
 
    
    

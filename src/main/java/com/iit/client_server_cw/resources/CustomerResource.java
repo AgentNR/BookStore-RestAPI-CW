@@ -41,9 +41,13 @@ public class CustomerResource {
 
     @GET
     @Path("/{id}")
-    public Response getById(@PathParam("id") String id) {
-        Customer c = customers.get(id);
-        if (c != null) return Response.ok(c).build();
+    public Response getById(@PathParam("id") int id) {
+        boolean exist = customerExist(id);
+        Customer cs = customers.get(id);
+        if (exist) {
+            return Response.ok(cs).build();
+            
+        }       
         return Response.status(Response.Status.NOT_FOUND)
                        .entity("Customer with ID " + id + " not found")
                        .build();
@@ -77,5 +81,16 @@ public class CustomerResource {
         return Response.status(Response.Status.NOT_FOUND)
                        .entity("Customer with ID " + id + " not found")
                        .build();
+    }
+    
+    public boolean customerExist(int customerId){
+        
+        Customer cs = customers.get(customerId);
+        if (cs != null) {
+            return true;
+            
+        }
+        return false;
+        
     }
 }
