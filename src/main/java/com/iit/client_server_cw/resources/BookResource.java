@@ -121,6 +121,13 @@ public class BookResource {
         }
     }
     
+    public Books getBookbyId(int bookId){
+        
+        return books.get(bookId);
+    
+    }
+   
+    
     
     
     

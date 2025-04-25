@@ -9,35 +9,46 @@ package com.iit.client_server_cw.model;
  * @author Nipuna Rajapaksa
  */
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Orders {
     
-    private String id;
-    private String customerId;
-    private List<Books> items = new ArrayList<>();
+    private int id;
+    private Carts carts;
     private LocalDateTime orderDate;
     private double totalAmount;
 
-    public Order() {}
+    public Orders() {
+    }   
+    
 
-    public Order(String id, String customerId, List<OrderItem> items,
-                 LocalDateTime orderDate, double totalAmount) {
+    public Orders(int id, Carts carts, LocalDateTime orderDate, double totalAmount) {
         this.id = id;
-        this.customerId = customerId;
-        this.items = items;
+        this.carts = carts;
         this.orderDate = orderDate;
         this.totalAmount = totalAmount;
     }
 
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public Carts getCarts() {
+        return carts;
+    }
 
-    public String getCustomerId() { return customerId; }
-    public void setCustomerId(String customerId) { this.customerId = customerId; }
+    public void setCarts(Carts carts) {
+        this.carts = carts;
+    } 
 
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }   
     
+
+   
+
+   
+
 
     public LocalDateTime getOrderDate() { return orderDate; }
     public void setOrderDate(LocalDateTime orderDate) { this.orderDate = orderDate; }
