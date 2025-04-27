@@ -4,6 +4,8 @@
  */
 package com.iit.client_server_cw.resources;
 
+import com.iit.client_server_cw.exception.AuthorNotFoundException;
+import com.iit.client_server_cw.exception.InvalidInputException;
 import com.iit.client_server_cw.model.Author;
 import com.iit.client_server_cw.model.Books;
 
@@ -27,6 +29,7 @@ public class AuthorResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createAuthor(Author author) {
+        validateNewAuthor(author);
         int id = counter.incrementAndGet();
         author.setId(id);
         authors.put(id, author);
@@ -39,62 +42,77 @@ public class AuthorResource {
 
     @GET
     @Path("/{id}")
-    public Response getAuthorById(@PathParam("id") String id) {
-        Author a = authors.get(id);
-        if (a != null) {
-            return Response.ok(a).build();
+    public Response getAuthorById(@PathParam("id") int id) {
+         Author a = authors.get(id);
+        if (a == null) {
+            throw new AuthorNotFoundException("Author with ID " + id + " not found");
         }
-        return Response.status(Response.Status.NOT_FOUND)
-                       .entity("Author with ID " + id + " not found")
-                       .build();
+        return Response.ok(a).build();
     }    
 
     @PUT
     @Path("/{id}")
     public Response updateAuthor(@PathParam("id") int id, Author updated) {
-        if (!authors.containsKey(id)) {
-            return Response.status(Response.Status.NOT_FOUND)
-                           .entity("Author with ID " + id + " not found")
-                           .build();
+         Author existing = authors.get(id);
+        if (existing == null) {
+            throw new AuthorNotFoundException("Author with ID " + id + " not found");
         }
-        Author existing = authors.get(id);
-        if (updated.getFirstName()!= null) {
+        validateUpdateAuthor(updated);
+
+        if (updated.getFirstName() != null) {
             existing.setFirstName(updated.getFirstName());
         }
-        if (updated.getLastName()!= null) {
+        if (updated.getLastName() != null) {
             existing.setLastName(updated.getLastName());
         }
         if (updated.getBiography() != null) {
             existing.setBiography(updated.getBiography());
         }
-        authors.put(id, existing);
+
         return Response.ok(existing).build();
     }
 
     @DELETE
     @Path("/{id}")
-    public Response deleteAuthor(@PathParam("id") String id) {
-        if (authors.remove(id) != null) {
-            return Response.noContent().build();
+    public Response deleteAuthor(@PathParam("id") int id) {
+         Author removed = authors.remove(id);
+        if (removed == null) {
+            throw new AuthorNotFoundException("Author with ID " + id + " not found");
         }
-        return Response.status(Response.Status.NOT_FOUND)
-                       .entity("Author with ID " + id + " not found")
-                       .build();
+        return Response.noContent().build();
     }
 
     @GET
     @Path("/{id}/books")
-    public Response getBooksByAuthor(@PathParam("id") String id) {
-        if (!authors.containsKey(id)) {
-            return Response.status(Response.Status.NOT_FOUND)
-                           .entity("Author with ID " + id + " not found")
-                           .build();
+    public Response getBooksByAuthor(@PathParam("id") int id) {
+       if (!authors.containsKey(id)) {
+            throw new AuthorNotFoundException("Author with ID " + id + " not found");
         }
-        
-        List<Books> all = new BookResource().getAllBooks();
+
+        List<Books> all  = new BookResource().getAllBooks();
         List<Books> byAuthor = all.stream()
-                                 .filter(b -> id.equals(b.getAuthorId()))
-                                 .collect(Collectors.toList());
+            .filter(b -> b.getAuthorId() == id)
+            .collect(Collectors.toList());
+
         return Response.ok(byAuthor).build();
+    }
+    private void validateNewAuthor(Author author) {
+        if (author.getFirstName() == null
+         || author.getFirstName().trim().isEmpty()) {
+            throw new InvalidInputException("Author first name is required");
+        }
+        if (author.getLastName() == null
+         || author.getLastName().trim().isEmpty()) {
+            throw new InvalidInputException("Author last name is required");
+        }
+        // biography is optional
+    }
+
+    private void validateUpdateAuthor(Author author) {
+        if (author.getFirstName() == null
+         && author.getLastName()  == null
+         && author.getBiography()== null) {
+            throw new InvalidInputException("At least one field (firstName, lastName, biography) must be provided to update");
+        }
     }
 }

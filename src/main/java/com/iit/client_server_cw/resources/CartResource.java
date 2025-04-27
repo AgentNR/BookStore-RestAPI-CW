@@ -1,20 +1,15 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.iit.client_server_cw.resources;
 
-
-import com.iit.client_server_cw.model.Books;
 import com.iit.client_server_cw.model.Carts;
 import com.iit.client_server_cw.model.Items;
-import com.iit.client_server_cw.model.Customer;
 
+import com.iit.client_server_cw.exception.CartNotFoundException;
+import com.iit.client_server_cw.exception.CustomerNotFoundException;
+import com.iit.client_server_cw.exception.InvalidInputException;
 
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.*;
+import javax.ws.rs.core.*;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -24,133 +19,112 @@ import java.util.stream.Collectors;
 @Consumes(MediaType.APPLICATION_JSON)
 public class CartResource {
 
-    //Here key is the cutomer id and the value is carts object
     private static final ConcurrentHashMap<Integer, Carts> carts = new ConcurrentHashMap<>();
     private static final AtomicInteger counter = new AtomicInteger(0);
-    
+
     @POST
     @Path("/items")
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response addItem(@PathParam("customerId") int customerId, Items item) {
-        
         boolean customerExist = new CustomerResource().customerExist(customerId);
+        if ((!customerExist)) {
+            throw new CustomerNotFoundException("Customer " + customerId + " not found");
+        }
+
         
-        if (!customerExist) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Customer does not exist")
-                    .build();
-        }       
-               
-        
+        if (item.getBookId() <= 0 || item.getBookQuantity() <= 0) {
+            throw new InvalidInputException("bookId and bookQuantity must be positive");
+        }
+
+       
         Carts cart = carts.computeIfAbsent(
             customerId,
-            id -> new Carts(id, customerId)  
+            id -> new Carts(id, customerId)
         );
-        // Add/update the item
+
+        
         cart.addItem(item.getBookId(), item.getBookQuantity());
-        return Response
-                .status(Response.Status.CREATED)
-                .entity(cart)
-                .build();
-        
-        // if already present, increase quantity
-        
-       
+
+        return Response.status(Response.Status.CREATED)
+                       .entity(cart)
+                       .build();
     }
 
     @GET
     public Response getCart(@PathParam("customerId") int customerId) {
         boolean customerExist = new CustomerResource().customerExist(customerId);
-        
         if (!customerExist) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Customer does not exist")
-                    .build();
-        }    
-        Carts cart = carts.get(customerId);
-        if (cart != null) {
-            return Response.ok(cart).build();
+            throw new CustomerNotFoundException("Customer " + customerId + " not found");
         }
-        return Response.status(Response.Status.NOT_FOUND)
-                       .entity("Cart for customer " + customerId + " not found")
-                       .build();
+        Carts cart = carts.get(customerId);
+        if (cart == null) {
+            throw new CartNotFoundException("Cart for customer " + customerId + " not found");
+        }
+        return Response.ok(cart).build();
     }
 
     @PUT
     @Path("/items/{bookId}")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response updateItem(@PathParam("customerId") int customerId,
-                               @PathParam("bookId") int bookId,
-                               Items updated) {
+    public Response updateItem(@PathParam("customerId") int customerId,@PathParam("bookId") int bookId,
+        Items updated) {
         boolean customerExist = new CustomerResource().customerExist(customerId);
         if (!customerExist) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Customer does not exist"+ customerId)
-                    .build();
-        }    
-       
+            throw new CustomerNotFoundException("Customer " + customerId + " not found");
+        }
+        if (updated.getBookQuantity() < 0) {
+            throw new InvalidInputException("bookQuantity cannot be negative");
+        }
         Carts cart = carts.get(customerId);
         if (cart == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                           .entity("Cart for customer " + customerId + " not found")
-                           .build();
+            throw new CartNotFoundException("Cart for customer " + customerId + " not found");
         }
-        List<Items> matches = cart.getItems().stream()
-                .filter(d -> d.getBookId()== bookId)
-                .collect(Collectors.toList());
-        
-        
 
-        
+        List<Items> matches = cart.getItems().stream()
+            .filter(i -> i.getBookId() == bookId)
+            .collect(Collectors.toList());
+
         if (matches.isEmpty()) {
-            return Response.status(Response.Status.NOT_FOUND)
-                           .entity("Item " + bookId + " not in cart")
-                           .build();
+            throw new CartNotFoundException("Item " + bookId + " not in cart");
         }
-        Items matcheditem = matches.get(0);
-        int newQuantity = updated.getBookQuantity();
-        if (newQuantity == 0) {
-            cart.getItems().remove(matcheditem);
-            
-        }else{
-             matcheditem.setBookQuantity(newQuantity);
+
+        Items line = matches.get(0);
+        if (updated.getBookQuantity() == 0) {
+            cart.getItems().remove(line);
+        } else {
+            line.setBookQuantity(updated.getBookQuantity());
         }
-       
+
         return Response.ok(cart).build();
     }
 
     @DELETE
     @Path("/items/{bookId}")
     public Response deleteItem(@PathParam("customerId") int customerId,
-                               @PathParam("bookId") int bookId) {
+        @PathParam("bookId")int bookId) {
         boolean customerExist = new CustomerResource().customerExist(customerId);
         if (!customerExist) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Customer does not exist"+ customerId)
-                    .build();
-        }           
-       
-        Carts cart = carts.get(customerId);
-        if (cart != null) {
-            boolean removed = cart.getItems().removeIf(i -> i.getBookId()==(bookId));
-            if (removed) {
-                return Response.noContent().build();
-            }
-            return Response.status(Response.Status.NOT_FOUND)
-                           .entity("Item " + bookId + " not in cart")
-                           .build();
+            throw new CustomerNotFoundException("Customer " + customerId + " not found");
         }
-        return Response.status(Response.Status.NOT_FOUND)
-                       .entity("Cart for customer " + customerId + " not found")
-                       .build();
+        Carts cart = carts.get(customerId);
+        if (cart == null) {
+            throw new CartNotFoundException("Cart for customer " + customerId + " not found");
+        }
+
+        boolean removed = cart.getItems().removeIf(i -> i.getBookId() == bookId);
+        if (!removed) {
+            throw new CartNotFoundException("Item " + bookId + " not in cart");
+        }
+
+        return Response.noContent().build();
     }
+
     
     public static Carts getCartForCustomer(int customerId) {
-        return carts.get(customerId);
+        Carts cart = carts.get(customerId);
+        if (cart == null) {
+            throw new CartNotFoundException("Cart for customer " + customerId + " not found");
+        }
+        return cart;
     }
-    
-     
-
 }

@@ -4,26 +4,30 @@
  */
 package com.iit.client_server_cw.model;
 import com.iit.client_server_cw.model.Items;
+import java.util.ArrayList;
 
 /**
  *
  * @author Nipuna Rajapaksa
  */
 
-import java.util.HashMap;
+
 import java.util.List;
-import java.util.Map;
+
 
 public class Carts {
    
     private int id;
     private int customerId;
     private List<Items> items;
- 
+
     public Carts(int id, int customerId) {
         this.id = id;
         this.customerId = customerId;
+       this.items      = new ArrayList<>();
     }
+ 
+    
 
     public int getId() {
         return id;

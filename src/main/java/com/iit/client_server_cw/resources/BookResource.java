@@ -5,6 +5,8 @@
 package com.iit.client_server_cw.resources;
 
 
+import com.iit.client_server_cw.exception.BookNotFoundException;
+import com.iit.client_server_cw.exception.InvalidInputException;
 import com.iit.client_server_cw.model.Books;
 import java.awt.PageAttributes;
 import java.util.ArrayList;
@@ -62,69 +64,94 @@ public class BookResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getBookById(@PathParam("id") int id){
         
-        Books book = books.get(id);
-        
-        
-        if (book != null) {
-            
-            return Response.status(Response.Status.ACCEPTED).entity(book).build();
-            
+       Books book = books.get(id);
+        if (book == null) {
+            throw new BookNotFoundException("Book with ID " + id + " not found");
         }
-         return Response.status(Response.Status.NOT_ACCEPTABLE).entity("The Books is not avaialble").build();
+        return Response.ok(book).build();
     }
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateBook(@PathParam("id") int id, Books updatedBook) {
-        if (books.containsKey(id)) {
-            Books existing = books.get(id);
-
-            if (updatedBook.getTitle() != null) {
-                existing.setTitle(updatedBook.getTitle());
-            }
-            if (updatedBook.getAuthorId() != 0) {
-                existing.setAuthorId(updatedBook.getAuthorId());
-            }
-            if (updatedBook.getIsbn() != null) {
-                existing.setIsbn(updatedBook.getIsbn());
-            }
-            if (updatedBook.getPublicationYear() != 0) {
-                existing.setPublicationYear(updatedBook.getPublicationYear());
-            }
-            if (updatedBook.getPrice() != 0.0) {
-                existing.setPrice(updatedBook.getPrice());
-            }
-            if (updatedBook.getStock() != 0) {
-                existing.setStock(updatedBook.getStock());
-            }
-
-            books.put(id, existing);
-            return Response.ok(existing).build();
-
-        } else {
-            return Response.status(Response.Status.NOT_FOUND)
-                           .entity("Book with ID " + id + " not found")
-                           .build();
+       Books existing = books.get(id);
+        if (existing == null) {
+            throw new BookNotFoundException("Book with ID " + id + " not found");
         }
+        validateUpdate(updatedBook);
+
+        // only overwrite fields that were provided
+        if (updatedBook.getTitle() != null) {
+            existing.setTitle(updatedBook.getTitle());
+        }
+        if (updatedBook.getAuthorId() != 0) {
+            existing.setAuthorId(updatedBook.getAuthorId());
+        }
+        if (updatedBook.getIsbn() != null) {
+            existing.setIsbn(updatedBook.getIsbn());
+        }
+        if (updatedBook.getPublicationYear() != 0) {
+            existing.setPublicationYear(updatedBook.getPublicationYear());
+        }
+        if (updatedBook.getPrice() != 0.0) {
+            existing.setPrice(updatedBook.getPrice());
+        }
+        if (updatedBook.getStock() != 0) {
+            existing.setStock(updatedBook.getStock());
+        }
+
+        return Response.ok(existing).build();
     }
 
      @DELETE
     @Path("/{id}")
     public Response deleteBook(@PathParam("id") int id) {
-        if (books.remove(id) != null) {
-            return Response.noContent().build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND)
-                           .entity("Book with ID " + id + " not found")
-                           .build();
+         Books removed = books.remove(id);
+        if (removed == null) {
+            throw new BookNotFoundException("Book with ID " + id + " not found");
         }
+        return Response.noContent().build();
     }
     
     public Books getBookbyId(int bookId){
         
-        return books.get(bookId);
+        Books book = books.get(bookId);
+        if (book == null) {
+            throw new BookNotFoundException("Book with ID " + bookId + " not found");
+        }
+        return book;
     
+    }
+     private void validateNewBook(Books book) {
+        if (book.getTitle() == null || book.getTitle().trim().isEmpty()|| book.getTitle().equals("")) {
+            throw new InvalidInputException("Title is required");
+        }
+        if (book.getIsbn() == null || book.getIsbn().trim().isEmpty()) {
+            throw new InvalidInputException("ISBN is required");
+        }
+        if (book.getPublicationYear() <= 0) {
+            throw new InvalidInputException("Publication year must be positive");
+        }
+        if (book.getPrice() < 0) {
+            throw new InvalidInputException("Price cannot be negative");
+        }
+        if (book.getStock() < 0) {
+            throw new InvalidInputException("Stock cannot be negative");
+        }
+    }
+
+    private void validateUpdate(Books book) {
+        // ensure at least one field is present to update
+        if (book.getTitle() == null
+         && book.getAuthorId() == 0
+         && book.getIsbn() == null
+         && book.getPublicationYear() == 0
+         && book.getPrice() == 0.0
+         && book.getStock() == 0) {
+            throw new InvalidInputException("At least one field must be provided for update");
+        }
+        // you can add further per-field validations here if you like
     }
    
     
